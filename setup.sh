@@ -1,11 +1,22 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-git clone https://github.com/l3tnun/docker-mirakurun-epgstation.git
-cd docker-mirakurun-epgstation
-cp docker-compose-sample.yml docker-compose.yml
-cp epgstation/config/enc.js.template epgstation/config/enc.js
-cp epgstation/config/config.yml.template epgstation/config/config.yml
-cp epgstation/config/operatorLogConfig.sample.yml epgstation/config/operatorLogConfig.yml
-cp epgstation/config/epgUpdaterLogConfig.sample.yml epgstation/config/epgUpdaterLogConfig.yml
-cp epgstation/config/serviceLogConfig.sample.yml epgstation/config/serviceLogConfig.yml
-docker-compose run --rm -e SETUP=true mirakurun
+git clone -q --recursive https://github.com/stu2005/docker-mirakurun-epgstation.git ~/dtv
+cd ~/dtv/
+
+cp ./samples/*docker-compose.yaml ./
+cp ./samples/epgstation/enc.js.template ./epgstation/enc.js
+cp ./samples/epgstation/config.yml.template ./epgstation/config.yml
+cp ./samples/epgstation/operatorLogConfig.sample.yml ./epgstation/operatorLogConfig.yml
+cp ./samples/epgstation/epgUpdaterLogConfig.sample.yml ./epgstation/epgUpdaterLogConfig.yml
+cp ./samples/epgstation/serviceLogConfig.sample.yml ./epgstation/serviceLogConfig.yml
+
+docker compose -f./mirakurun.docker-compose.yaml run --rm -eSETUP=true mirakurun
+docker compose -f./scan.docker-compose.yaml run --rm tvchannels-scan
+docker compose -f./scan.docker-compose.yaml run --rm isdb-scanner
+docker compose -f./mirakurun.docker-compose.yaml run -d --rm mirakurun
+while [ "$(docker inspect --format='{{.State.Health.Status}}' mirakurun)" != "healthy" ]; do
+    sleep 2
+done
+curl -X GET "http://localhost:40772/api/channels/scan?type=GR"
+curl -X GET "http://localhost:40772/api/channels/scan?type=BS"
+docker compose -f./mirakurun.docker-compose.yaml down -v

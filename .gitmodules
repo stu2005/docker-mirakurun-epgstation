@@ -1,0 +1,3 @@
+[submodule "samples"]
+	path = samples
+	url = https://github.com/stu2005/tv-recorder
