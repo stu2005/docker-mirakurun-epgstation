@@ -14,7 +14,8 @@ docker compose -f./mirakurun.docker-compose.yaml run --rm -eSETUP=true mirakurun
 docker compose -f./scan.docker-compose.yaml run --rm tvchannels-scan
 docker compose -f./scan.docker-compose.yaml run --rm isdb-scanner
 docker compose -f./mirakurun.docker-compose.yaml run -d --rm mirakurun
-while [ "$(docker inspect --format='{{.State.Health.Status}}' mirakurun)" != "healthy" ]; do
+URL="http://localhost:40772/api/status"
+until curl --silent --fail "$URL" > /dev/null; do
     sleep 2
 done
 curl -X GET "http://localhost:40772/api/channels/scan?type=GR"
